@@ -221,7 +221,9 @@ def put(key, data, timeout=1800):
             auth = {"X-Party": PARTY, "X-Sig": ME[0].sign(signed(f"PUT {key}", data)).hex()}  # the board checks it
             return urllib.request.urlopen(urllib.request.Request(f"{CFG['board']}/{key}", data=data, method="PUT",
                                                                  headers=auth), timeout=NET_TIMEOUT).read()
-        except (urllib.error.URLError, TimeoutError) as e:  # HTTPError (a refusal) is a URLError too: don't retry it
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:  # HTTPError (a refusal) is a URLError
+            # too: don't retry it. ConnectionError: reset or closed without a reply (raised raw, not as URLError);
+            # resending is safe, the board accepts an identical re-send
             if isinstance(e, urllib.error.HTTPError) or isinstance(getattr(e, "reason", None), ssl.SSLError) \
                     or time.time() - start > timeout:
                 raise
@@ -238,7 +240,7 @@ def try_get(key, method="GET"):
         if isinstance(e.reason, ssl.SSLError):
             raise  # wrong certificate: waiting won't fix it
         # board not up yet, or the connection attempt timed out
-    except TimeoutError:  # stalled mid-transfer: ask again
+    except (TimeoutError, ConnectionError):  # stalled mid-transfer, or reset / closed without a reply: ask again
         pass
     return None
 
@@ -303,8 +305,14 @@ def run_role(fn, role, args):
         raise
 
 
+class BoardServer(ThreadingHTTPServer):
+    # pending connections the OS holds for accept(); the default 5 overflowed with 9 parties polling through
+    # Docker's port proxy on Linux, which then reset connections (CI, 2026-10-16)
+    request_queue_size = 128
+
+
 def board_server(cert=None, key=None, host=""):
-    server = ThreadingHTTPServer((host, PORT), Board)
+    server = BoardServer((host, PORT), Board)
     if cert:
         tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         tls.load_cert_chain(cert, key)

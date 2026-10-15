@@ -23,8 +23,8 @@ together could decrypt single updates (t = members − 1 by default).
 
 1. Install Docker (Docker Desktop on Windows/Mac) and start it. Unzip this folder.
 2. Get the image, one of:
-   - Download (~1.8 GB): `docker pull ghcr.io/riddheshmorankar53-crypto/concilium:c137a08ef298dbff`, then
-     `docker tag ghcr.io/riddheshmorankar53-crypto/concilium:c137a08ef298dbff concilium`. It was built from this
+   - Download (~1.8 GB): `docker pull ghcr.io/riddheshmorankar53-crypto/concilium:1c669e7960649da1`, then
+     `docker tag ghcr.io/riddheshmorankar53-crypto/concilium:1c669e7960649da1 concilium`. It was built from this
      code by GitHub Actions; building it yourself gives the same hash.
    - Build it yourself from this folder: `sh build.sh` (Windows: `build.cmd`). 10–20 minutes.
 
