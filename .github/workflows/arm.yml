@@ -1,0 +1,41 @@
+# Experiment (manual): can Concilium run natively on ARM (Apple Silicon, ARM servers)? The openfhe wheel on PyPI
+# holds only x86-64 binaries, so this builds OpenFHE 1.5.1 and openfhe-python 1.5.1.0 (the wheel's versions)
+# from source on GitHub's ARM runner, then runs threshold.py (threshold CKKS + the filter, asserts its claims).
+name: arm
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/arm.yml]
+defaults:
+  run:
+    shell: bash
+jobs:
+  arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: build OpenFHE and openfhe-python from source
+        run: |
+          {
+          sudo apt-get update && sudo apt-get install -y build-essential cmake python3-dev python3-pip pybind11-dev
+          git clone --depth 1 --branch v1.5.1 https://github.com/openfheorg/openfhe-development.git
+          cmake -S openfhe-development -B ofd -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF
+          cmake --build ofd -j4 && sudo cmake --install ofd
+          git clone --depth 1 --branch v1.5.1.0 https://github.com/openfheorg/openfhe-python.git
+          cmake -S openfhe-python -B ofp -DCMAKE_PREFIX_PATH=/usr/local && cmake --build ofp -j4
+          } 2>&1 | tee build.log
+          echo "PYTHONPATH=$PWD/ofp" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=/usr/local/lib" >> "$GITHUB_ENV"
+      - name: threshold.py on arm64
+        run: |
+          pip3 install --break-system-packages numpy scikit-learn cryptography
+          uname -m && python3 -c "import openfhe; print('openfhe imported')"
+          python3 threshold.py 2>&1 | tee threshold.log
+      - name: failure details
+        if: failure()
+        run: |
+          for f in build.log threshold.log; do
+            [ -f $f ] && echo "::error title=$f::$(tail -40 $f | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          done; true
