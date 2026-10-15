@@ -1,0 +1,4 @@
+# the code runs in Linux containers: keep LF line endings on every checkout
+* text=auto eol=lf
+# Windows scripts for the friend package need CRLF
+*.cmd text eol=crlf

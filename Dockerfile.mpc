@@ -1,0 +1,13 @@
+# Research only (ss_mpc.py): the concilium-research image plus MP-SPDZ 0.4.3's release binaries (no compiling), hash recorded
+# 2026-10-12. The deployment never uses it.  docker build -f Dockerfile.mpc -t concilium-mpc .
+FROM concilium-research
+RUN python3 -c "import hashlib, tarfile, urllib.request; \
+u = 'https://github.com/data61/MP-SPDZ/releases/download/v0.4.3/mp-spdz-0.4.3.tar.xz'; \
+urllib.request.urlretrieve(u, '/tmp/m.tar.xz'); \
+h = hashlib.sha256(open('/tmp/m.tar.xz', 'rb').read()).hexdigest(); \
+assert h == '4b5f4f7a79f31365288fe4498ba2b70afc314c028696929c8d259ef50ab2e759', h; \
+tarfile.open('/tmp/m.tar.xz').extractall('/opt')" \
+ && rm /tmp/m.tar.xz && mv /opt/mp-spdz-0.4.3 /opt/mp-spdz
+WORKDIR /opt/mp-spdz
+RUN Scripts/tldr.sh
+WORKDIR /work

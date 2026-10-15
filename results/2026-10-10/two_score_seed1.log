@@ -1,0 +1,21 @@
+seed 1 | none                     | filter   | 0.853 / 0.949 | mal kept 0% honest rej 32% skipped 0
+seed 1 | none                     | feat     | 0.829 / 0.967 | mal kept 0% honest rej 26% skipped 0
+seed 1 | none                     | balance  | 0.840 / 0.954 | mal kept 0% honest rej 37% skipped 0
+seed 1 | sign-flip x10            | filter   | 0.832 / 0.979 | mal kept 18% honest rej 34% skipped 0
+seed 1 | sign-flip x10            | feat     | 0.793 / 0.979 | mal kept 34% honest rej 29% skipped 0
+seed 1 | sign-flip x10            | balance  | 0.792 / 0.985 | mal kept 30% honest rej 25% skipped 0
+seed 1 | ALIE                     | filter   | 0.856 / 0.936 | mal kept 77% honest rej 41% skipped 1
+seed 1 | ALIE                     | feat     | 0.785 / 0.985 | mal kept 60% honest rej 24% skipped 0
+seed 1 | ALIE                     | balance  | 0.766 / 0.982 | mal kept 80% honest rej 15% skipped 0
+seed 1 | inside, hide 45deg 1.0x  | filter   | 0.859 / 0.926 | mal kept 73% honest rej 41% skipped 0
+seed 1 | inside, hide 45deg 1.0x  | feat     | 0.835 / 0.959 | mal kept 93% honest rej 20% skipped 0
+seed 1 | inside, hide 45deg 1.0x  | balance  | 0.772 / 0.990 | mal kept 100% honest rej 19% skipped 0
+seed 1 | inside, hide 70deg 2.9x  | filter   | 0.864 / 0.959 | mal kept 57% honest rej 40% skipped 1
+seed 1 | inside, hide 70deg 2.9x  | feat     | 0.819 / 0.977 | mal kept 77% honest rej 30% skipped 1
+seed 1 | inside, hide 70deg 2.9x  | balance  | 0.862 / 0.926 | mal kept 80% honest rej 32% skipped 0
+seed 1 | inside, hide 85deg 2.9x  | filter   | 0.804 / 0.982 | mal kept 40% honest rej 30% skipped 0
+seed 1 | inside, hide 85deg 2.9x  | feat     | 0.837 / 0.972 | mal kept 90% honest rej 27% skipped 0
+seed 1 | inside, hide 85deg 2.9x  | balance  | 0.846 / 0.946 | mal kept 97% honest rej 27% skipped 0
+seed 1 | inside, flip 70deg 2.9x  | filter   | 0.837 / 0.982 | mal kept 67% honest rej 33% skipped 0
+seed 1 | inside, flip 70deg 2.9x  | feat     | 0.865 / 0.931 | mal kept 13% honest rej 34% skipped 0
+seed 1 | inside, flip 70deg 2.9x  | balance  | 0.864 / 0.936 | mal kept 13% honest rej 36% skipped 1

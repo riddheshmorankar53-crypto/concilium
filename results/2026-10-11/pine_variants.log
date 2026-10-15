@@ -1,0 +1,7 @@
+Pine64, 2 proofs (now)   honest ok True, liar accepted False, prove 1.8s, verify per member 1.5s, proof 0.14 MB
+Pine64, 3+3 proofs       honest ok True, liar accepted False, prove 3.5s, verify per member 1.6s, proof 0.15 MB
+Pine128, 1 proof         honest ok True, liar accepted False, prove 2.0s, verify per member 1.6s, proof 0.27 MB
+after the run_wr_checks / encode_vec speedup (e7cbecb), same machine:
+Pine64, 2 proofs (old)   honest ok True, liar accepted False, prove 0.4s, verify per member 0.2s, proof 0.14 MB
+Pine64, 3+3 proofs       honest ok True, liar accepted False, prove 1.6s, verify per member 0.3s, proof 0.15 MB
+Pine128, 1 proof (now)   honest ok True, liar accepted False, prove 0.6s, verify per member 0.2s, proof 0.27 MB

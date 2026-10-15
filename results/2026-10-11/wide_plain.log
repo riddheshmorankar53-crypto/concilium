@@ -1,0 +1,4 @@
+cnn         14146 params, no attack    : accuracy 0.867, pneumonia recall 0.892; honest |u| p10/50/90 0.13/0.29/0.59 (B = 1)
+cnn         14146 params, sign-flip x10: accuracy 0.870, pneumonia recall 0.869; honest |u| p10/50/90 0.14/0.23/0.41 (B = 1)
+cnn_wide   107586 params, no attack    : accuracy 0.857, pneumonia recall 0.918; honest |u| p10/50/90 0.14/0.29/0.65 (B = 1)
+cnn_wide   107586 params, sign-flip x10: accuracy 0.880, pneumonia recall 0.890; honest |u| p10/50/90 0.16/0.25/0.41 (B = 1)

@@ -1,0 +1,70 @@
+1|0|none|none|0.811|0.992|0.00|0
+1|0|none|filter|0.822|0.979|0.32|0
+1|0|sign-flip x10|none|0.000|0.000|0.00|0
+1|0|sign-flip x10|filter|0.739|1.000|0.35|0
+1|0|ALIE|none|0.816|0.990|0.00|0
+1|0|ALIE|filter|0.798|0.982|0.44|0
+1|0|inside, hide 45deg 1.0x|none|0.804|0.990|0.00|0
+1|0|inside, hide 45deg 1.0x|filter|0.809|0.979|0.46|0
+1|0|inside, hide 70deg 2.9x|none|0.793|0.992|0.00|0
+1|0|inside, hide 70deg 2.9x|filter|0.819|0.982|0.40|2
+1|0|inside, hide 85deg 2.9x|none|0.804|0.992|0.00|0
+1|0|inside, hide 85deg 2.9x|filter|0.851|0.977|0.38|0
+1|0|inside, flip 70deg 2.9x|none|0.873|0.931|0.00|0
+1|0|inside, flip 70deg 2.9x|filter|0.801|0.992|0.31|0
+1|1|none|none|0.833|0.979|0.00|0
+1|1|none|filter|0.780|0.987|0.31|0
+1|1|sign-flip x10|none|0.000|0.000|0.00|0
+1|1|sign-flip x10|filter|0.865|0.938|0.35|0
+1|1|ALIE|none|0.824|0.982|0.00|0
+1|1|ALIE|filter|0.817|0.974|0.42|0
+1|1|inside, hide 45deg 1.0x|none|0.829|0.982|0.00|0
+1|1|inside, hide 45deg 1.0x|filter|0.819|0.979|0.37|0
+1|1|inside, hide 70deg 2.9x|none|0.833|0.987|0.00|0
+1|1|inside, hide 70deg 2.9x|filter|0.851|0.977|0.32|0
+1|1|inside, hide 85deg 2.9x|none|0.838|0.985|0.00|0
+1|1|inside, hide 85deg 2.9x|filter|0.832|0.985|0.33|0
+1|1|inside, flip 70deg 2.9x|none|0.872|0.949|0.00|0
+1|1|inside, flip 70deg 2.9x|filter|0.787|0.992|0.33|0
+1|2|none|none|0.827|0.987|0.00|0
+1|2|none|filter|0.843|0.821|0.35|0
+1|2|sign-flip x10|none|0.000|0.000|0.00|0
+1|2|sign-flip x10|filter|0.857|0.864|0.34|0
+1|2|ALIE|none|0.846|0.974|0.00|0
+1|2|ALIE|filter|0.853|0.941|0.43|0
+1|2|inside, hide 45deg 1.0x|none|0.848|0.979|0.00|0
+1|2|inside, hide 45deg 1.0x|filter|0.846|0.885|0.39|0
+1|2|inside, hide 70deg 2.9x|none|0.840|0.977|0.00|0
+1|2|inside, hide 70deg 2.9x|filter|0.867|0.915|0.40|0
+1|2|inside, hide 85deg 2.9x|none|0.854|0.903|0.00|0
+1|2|inside, hide 85deg 2.9x|filter|0.851|0.892|0.38|0
+1|2|inside, flip 70deg 2.9x|none|0.846|0.959|0.00|0
+1|2|inside, flip 70deg 2.9x|filter|0.865|0.897|0.30|0
+1|3|none|none|0.817|0.990|0.00|0
+1|3|none|filter|0.790|0.990|0.37|0
+1|3|sign-flip x10|none|0.000|0.000|0.00|0
+1|3|sign-flip x10|filter|0.857|0.892|0.34|0
+1|3|ALIE|none|0.830|0.985|0.00|0
+1|3|ALIE|filter|0.833|0.959|0.41|1
+1|3|inside, hide 45deg 1.0x|none|0.827|0.987|0.00|0
+1|3|inside, hide 45deg 1.0x|filter|0.841|0.949|0.40|0
+1|3|inside, hide 70deg 2.9x|none|0.835|0.987|0.00|0
+1|3|inside, hide 70deg 2.9x|filter|0.821|0.985|0.33|2
+1|3|inside, hide 85deg 2.9x|none|0.838|0.985|0.00|0
+1|3|inside, hide 85deg 2.9x|filter|0.833|0.977|0.33|1
+1|3|inside, flip 70deg 2.9x|none|0.854|0.972|0.00|0
+1|3|inside, flip 70deg 2.9x|filter|0.811|0.990|0.28|0
+1|4|none|none|0.798|0.992|0.00|0
+1|4|none|filter|0.861|0.897|0.35|0
+1|4|sign-flip x10|none|0.000|0.000|0.00|0
+1|4|sign-flip x10|filter|0.845|0.969|0.35|0
+1|4|ALIE|none|0.816|0.987|0.00|0
+1|4|ALIE|filter|0.827|0.969|0.38|0
+1|4|inside, hide 45deg 1.0x|none|0.822|0.990|0.00|0
+1|4|inside, hide 45deg 1.0x|filter|0.832|0.977|0.35|0
+1|4|inside, hide 70deg 2.9x|none|0.840|0.985|0.00|0
+1|4|inside, hide 70deg 2.9x|filter|0.821|0.987|0.40|1
+1|4|inside, hide 85deg 2.9x|none|0.835|0.982|0.00|0
+1|4|inside, hide 85deg 2.9x|filter|0.822|0.979|0.38|0
+1|4|inside, flip 70deg 2.9x|none|0.803|0.985|0.00|0
+1|4|inside, flip 70deg 2.9x|filter|0.869|0.944|0.35|0

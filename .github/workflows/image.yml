@@ -1,0 +1,26 @@
+# Builds the concilium image on GitHub's machines and publishes it to ghcr.io, tagged with the code hash
+# (`concilium version`, part of every session id) and `latest`. Free for public packages; no upload from a home line.
+name: image
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, requirements.txt, "*.py", "tasks/**", "pine_poc/**"]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  concilium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target tool -t concilium .
+      - name: push
+        run: |
+          hash=$(docker run --rm concilium concilium version | cut -d' ' -f3)
+          image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/concilium
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for tag in "$hash" latest; do
+            docker tag concilium "$image:$tag" && docker push "$image:$tag"
+          done
+          echo "pushed $image:$hash (compare this hash with \`concilium version\` on a local build)" >> "$GITHUB_STEP_SUMMARY"

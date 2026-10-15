@@ -1,0 +1,10 @@
+# never bake keys, run folders or datasets into the image
+*.key
+*.pub
+*.json
+.concilium-demo
+**/__pycache__
+*.npz
+*.pem
+NEXT_SESSION.md
+CONCEPTS_TODO.md

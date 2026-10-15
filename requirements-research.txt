@@ -1,0 +1,3 @@
+# On top of requirements.txt for the research scripts (fl_core, gap_b, gap_c: TenSEAL). Exact files, by hash: pip refuses anything else (--require-hashes).
+# Taken 2026-10-11 from the image every test in results/ ran on (pip freeze, then pip download + sha256).
+tenseal==0.3.18 --hash=sha256:0e43aafc90ad8ebda400fa51a3845d966ad3aeccf615f17c4dd5507835ea7b4f
