@@ -35,8 +35,8 @@ jobs:
       - name: failure details
         if: failure()
         run: |
-          for f in run/*.log; do
-            [ -f "$f" ] && echo "::error title=$f::$(tail -25 "$f" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          for f in run/board.log run/m0.log run/m1.log run/m2.log run/p0.log; do  # GitHub keeps 10 annotations a step
+            [ -f "$f" ] && echo "::error title=$f::$(tail -40 "$f" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
           done; true
   mac:
     runs-on: macos-15-intel
