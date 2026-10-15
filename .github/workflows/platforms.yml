@@ -1,0 +1,61 @@
+# Real Linux and Mac hosts (GitHub's runners), as release/QUICKSTART.md does it:
+#   linux: build the image, then a full deployment through release/concilium.sh, every party as this (non-root)
+#          user: board, 3 members, 6 participants, each its own container, keys checked to belong to the user
+#   mac:   Docker through Colima on an Intel Mac, the published image, the one-machine demo (python deploy.py)
+# On failure the last log lines become annotations (readable without signing in, unlike logs).
+name: platforms
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/platforms.yml, release/**, deploy.py, threshold.py, fl_core.py, range_proof.py]
+defaults:
+  run:
+    shell: bash  # -eo pipefail: a failing command before `| tee` fails the step
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target tool -t concilium .
+      - name: deploy through release/concilium.sh, as a non-root user
+        run: |
+          mkdir run && cp release/concilium.sh run/ && cd run
+          for p in m0 m1 m2 p0 p1 p2 p3 p4 p5; do sh concilium.sh keys $p; done
+          [ "$(stat -c %U m0.key)" = "$(id -un)" ] && [ "$(stat -c %a m0.key)" = 600 ] || { echo "keys not owned by the user"; ls -l; exit 1; }
+          sh concilium.sh config concilium.json --board http://172.17.0.1:8000 --task lr --member-timeout 30 \
+            --committee m0.pub m1.pub m2.pub --participants p0.pub p1.pub p2.pub p3.pub p4.pub p5.pub
+          sh concilium.sh board concilium.json > board.log 2>&1 &
+          members=""
+          for m in 0 1 2; do sh concilium.sh member concilium.json m$m.key > m$m.log 2>&1 & members="$members $!"; done
+          for p in 0 1 2 3 4 5; do sh concilium.sh participant concilium.json p$p.key > p$p.log 2>&1 & done
+          for pid in $members; do wait $pid || { echo "a member failed"; exit 1; }; done
+          grep "deployed:" m0.log && grep -q "deployed: accuracy 0\.[89]" m0.log
+      - name: failure details
+        if: failure()
+        run: |
+          for f in run/*.log; do
+            [ -f "$f" ] && echo "::error title=$f::$(tail -25 "$f" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          done; true
+  mac:
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker via colima
+        run: |
+          brew install docker colima
+          colima start --cpu 3 --memory 10 2>&1 | tee colima.log
+          docker info | head -5
+      - name: one-machine demo with the published image
+        run: |
+          pip3 install --break-system-packages cryptography numpy scikit-learn
+          docker pull ghcr.io/riddheshmorankar53-crypto/concilium:latest
+          IMAGE=ghcr.io/riddheshmorankar53-crypto/concilium:latest python3 deploy.py 2>&1 | tee demo.log
+      - name: failure details
+        if: failure()
+        run: |
+          for f in colima.log demo.log; do
+            [ -f "$f" ] && echo "::error title=$f::$(tail -25 "$f" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          done; true
