@@ -1,25 +1,31 @@
 # The Flower plugin (concilium_flwr.py), checked by flower_check.py: the demo's board and committee, the 10
-# participants as one Flower simulation (FLOWER=1 python deploy.py). The lead's checks plus Flower-side asserts.
+# participants as Flower nodes, in Flower's simulation runtime (FLOWER=1) and its deployment runtime (FLOWER=deploy:
+# a SuperLink, 10 SuperNodes, `flwr run`). The lead's checks plus Flower-side asserts.
 name: flower
 on:
   workflow_dispatch:
   push:
     branches: [main, flower]
-    paths: [.github/workflows/flower.yml, concilium_flwr.py, flower_check.py, deploy.py, threshold.py, range_proof.py]
+    paths: [.github/workflows/flower.yml, concilium_flwr.py, flower_check.py, deploy.py, threshold.py, range_proof.py,
+            requirements-flower.txt, Dockerfile]
 defaults:
   run:
     shell: bash
 jobs:
-  simulation:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: ["1", deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - run: docker build --target tool -t concilium .
-      - name: board + committee + Flower simulation
+      - name: board + committee + Flower nodes
         run: |
           pip3 install --break-system-packages cryptography numpy scikit-learn
-          FLOWER=1 python3 deploy.py 2>&1 | tee demo.log
+          FLOWER=${{ matrix.runtime }} python3 deploy.py 2>&1 | tee demo.log
       - name: failure details
         if: failure()
         run: |

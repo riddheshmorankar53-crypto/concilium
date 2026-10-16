@@ -1305,7 +1305,7 @@ def launch():
         raise SystemExit(f"REMOTE_MEMBER must be 1..{n_members - 1} (not the lead) with its m{remote}.pub in this folder")
     local = [i for i in range(n_members) if i != remote]
     members = {i: f"concilium-member-{i}" for i in local}
-    flower = os.environ.get("FLOWER") == "1"  # the participants as one Flower simulation instead (flower_check.py)
+    flower = os.environ.get("FLOWER") in ("1", "deploy")  # the participants as Flower nodes instead (flower_check.py)
     names = ["concilium-board", *members.values()] + (["concilium-flower"] if flower else
                                                      [f"concilium-client-{c}" for c in range(N_CLIENTS)])
     run = ".concilium-demo"  # inside this folder: the containers see it as /work/.concilium-demo
@@ -1351,13 +1351,18 @@ def launch():
             docker(*base, "--name", name, "-e", f"OMP_NUM_THREADS={threads}",
                    "-e", "OMP_WAIT_POLICY=PASSIVE",  # idle threads sleep: ~half the CPU, ~9% slower HE
                    IMAGE, "python3", "deploy.py", "member", f"{run}/concilium.json", f"{run}/m{i}.key")
-        if flower:  # the demo's image + Flower (not hash-pinned: a check, not something a party runs)
-            subprocess.run(["docker", "build", "-t", "concilium-flower", "-"], check=True, text=True,
-                           input=f"FROM {IMAGE}\nRUN pip3 install --no-cache-dir --break-system-packages "
-                                 "'flwr[simulation]==1.40.0'\n")
+        if flower:  # the Flower client-node image; the simulation adds Ray (unpinned: only this check needs it)
+            subprocess.run(["docker", "build", "--target", "flower", "-t", "concilium-flower", "."], check=True)
+            image = "concilium-flower"
+            if os.environ["FLOWER"] != "deploy":
+                image = "concilium-flower-sim"
+                subprocess.run(["docker", "build", "-t", image, "-"], check=True, text=True,
+                               input="FROM concilium-flower\nRUN pip3 install --no-cache-dir --break-system-packages "
+                                     "ray==2.55.1\n")
             docker(*base, "--name", "concilium-flower", "-e", "OMP_NUM_THREADS=1", "-e", "PYTHONPATH=/work",
                    "-e", "PINE_MALICIOUS=1",  # participant 0's own proof checks off (honest ones' proofs still verify)
-                   "--shm-size", "1g", "concilium-flower", "python3", "flower_check.py")
+                   "--shm-size", "1g", image, "python3", "flower_check.py",
+                   *(["deploy"] if os.environ["FLOWER"] == "deploy" else []))
         for c in [] if flower else range(N_CLIENTS):
             docker(*base, "--name", f"concilium-client-{c}", "-e", "OMP_NUM_THREADS=1",
                    "-e", f"PINE_MALICIOUS={int(bool(float(NORM_BOUND)) and SIMULATE and c == 0)}",  # the liar's own checks off

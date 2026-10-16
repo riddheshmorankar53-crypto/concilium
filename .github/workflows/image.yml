@@ -1,13 +1,14 @@
 # Builds the concilium image on GitHub's machines and publishes it to ghcr.io, tagged with the code hash
 # (`concilium version`, part of every session id) and `latest`. Free for public packages; no upload from a home line.
 # Two native builds (x86-64 and arm64 runners, no emulation) joined into one multi-arch tag, so `docker pull`
-# picks the right one. Both builds must report the same code hash, or nothing is tagged.
+# picks the right one. Both builds must report the same code hash, or nothing is tagged. concilium-flower (the
+# image for Flower client nodes, concilium_flwr.py) is published the same way, under the same hash.
 name: image
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, requirements.txt, "*.py", "tasks/**", "pine_poc/**", .github/workflows/image.yml]
+    paths: [Dockerfile, .dockerignore, "requirements*.txt", "*.py", "tasks/**", "pine_poc/**", .github/workflows/image.yml]
 permissions:
   contents: read
   packages: write
@@ -25,16 +26,18 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --target tool -t concilium .
+      - run: docker build --target tool -t concilium . && docker build --target flower -t concilium-flower .
       - name: arm64 check (OpenFHE built from source here)
         if: matrix.arch == 'arm64'
         run: docker run --rm -v "$PWD:/work" concilium python3 threshold.py
       - name: push
         run: |
           hash=$(docker run --rm concilium concilium version | cut -d' ' -f3)
-          image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/concilium
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker tag concilium "$image:$hash-${{ matrix.arch }}" && docker push "$image:$hash-${{ matrix.arch }}"
+          owner=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}
+          for name in concilium concilium-flower; do
+            docker tag $name "$owner/$name:$hash-${{ matrix.arch }}" && docker push "$owner/$name:$hash-${{ matrix.arch }}"
+          done
           echo "$hash" > hash-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
@@ -51,7 +54,9 @@ jobs:
         run: |
           amd=$(cat hash-amd64); arm=$(cat hash-arm64)
           [ "$amd" = "$arm" ] || { echo "::error::code hash differs: amd64 $amd, arm64 $arm"; exit 1; }
-          image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/concilium
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker buildx imagetools create -t "$image:$amd" -t "$image:latest" "$image:$amd-amd64" "$image:$amd-arm64"
-          echo "pushed $image:$amd for amd64 + arm64 (compare this hash with \`concilium version\` on a local build)" >> "$GITHUB_STEP_SUMMARY"
+          for name in concilium concilium-flower; do
+            image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$name
+            docker buildx imagetools create -t "$image:$amd" -t "$image:latest" "$image:$amd-amd64" "$image:$amd-arm64"
+          done
+          echo "pushed concilium and concilium-flower :$amd for amd64 + arm64 (compare this hash with \`concilium version\` on a local build)" >> "$GITHUB_STEP_SUMMARY"

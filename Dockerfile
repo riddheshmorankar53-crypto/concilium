@@ -42,6 +42,16 @@ COPY tasks /app/tasks
 COPY pine_poc /app/pine_poc
 RUN printf '#!/bin/sh\nexec python3 /app/deploy.py "$@"\n' > /usr/local/bin/concilium && chmod +x /usr/local/bin/concilium
 
+# Flower client nodes (concilium_flwr.py): the tool + flwr, pinned the same way. A Flower SuperNode runs here:
+#   docker run ... concilium-flower flower-supernode --superlink <address> \
+#     --node-config "concilium-config='concilium.json' concilium-key='p0.key'"
+FROM tool AS flower
+COPY requirements-flower.txt /tmp/
+RUN pip3 install --no-cache-dir --break-system-packages --require-hashes --no-deps --only-binary=:all: \
+    -r /tmp/requirements-flower.txt
+COPY concilium_flwr.py /app/
+ENV PYTHONPATH=/app
+
 FROM tool AS research
 COPY requirements-research.txt /tmp/
 RUN pip3 install --no-cache-dir --break-system-packages --require-hashes --no-deps -r /tmp/requirements-research.txt
