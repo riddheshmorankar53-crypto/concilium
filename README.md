@@ -50,6 +50,28 @@ party. For tabular data in CSV files (yes/no prediction) no coding is needed: `t
 models: copy `tasks/lr.py` (logistic regression) or `tasks/cnn.py` (PyTorch CNN) and fill in five functions.
 Everything can run at no cost: the image is public, and the board can run on one party's own computer.
 
+## Use it from a Flower app
+
+Already training with [Flower](https://flower.ai) (1.40)? `concilium_flwr.py` swaps its aggregation for Concilium's
+without changing your training code. Read "Limits" first: this is an unaudited prototype.
+
+```python
+from concilium_flwr import ConciliumStrategy, concilium_mod
+
+client = ClientApp(mods=[concilium_mod])   # your @client.train() stays as it is
+strategy = ConciliumStrategy("concilium.json")   # in place of FedAvg; num_rounds = the task's ROUNDS
+```
+
+Each client node sets `concilium-config` (the run's `concilium.json`) and `concilium-key` (its own `.key`) in its
+node config. The mod gives your train function the model t committee members signed (not what the Flower server
+sent), posts the update encrypted with its range proof to the Concilium board, and strips it from the reply, so
+the Flower server sees metrics only. The board and committee run as above (`concilium board`, `concilium member`);
+the committee still needs the task file, since it trains the filter's reference update on its root data, so use
+the same `train` in your `ClientApp`. Client nodes need `openfhe` (Linux x86-64; on ARM build it, see the
+Dockerfile) next to `deploy.py`, `threshold.py`, `range_proof.py` and `pine_poc/`. `FLOWER=1 python deploy.py`
+runs the demo's participants as a Flower simulation and checks it (`flower_check.py`, also on CI). Tested with
+Flower's simulation runtime only, not yet with separate SuperLink/SuperNode processes.
+
 ## Limits, in short
 
 - **Trust:** fewer than t committee members collude, and members follow key generation honestly.
@@ -71,6 +93,7 @@ The full list, with measurements: RESEARCH.md, "Known limits, read before deploy
 | `deploy.py` | the tool: keys, config, board, member, participant, and the local demo |
 | `threshold.py`, `fl_core.py`, `range_proof.py` | threshold CKKS, the filter, the range proofs |
 | `gap_*.py`, `flood_probe.py`, `ss_mpc.py`, ... | the attacks and evaluations behind RESEARCH.md; each asserts its own claims |
+| `concilium_flwr.py`, `flower_check.py` | the Flower plugin and its check |
 | `demo.py` | runs all 15 steps of the story in order (~30 min) |
 | `tasks/` | example tasks and the CSV template |
 | `release/`, `friend/` | the packages for real deployments |
