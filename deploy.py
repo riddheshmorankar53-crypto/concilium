@@ -1187,45 +1187,62 @@ def member(i):
             f"the range proofs must reject exactly the out-of-bound liar, got {unproven}"
 
 
-def participant(c):
-    import numpy as np
+def joint_key():
+    """The committee's crypto context and joint public key, each signed by its maker."""
     import openfhe as fhe
-
-    from threshold import encrypt, pack
     B, last = fhe.BINARY, len(CFG["committee"]) - 1
     cc = fhe.DeserializeCryptoContextString(mget("keygen/cc", 0), B)
-    pk = fhe.DeserializePublicKeyString(mget(f"keygen/pk/{last}", last), B)  # the joint key, signed by its maker
+    return cc, fhe.DeserializePublicKeyString(mget(f"keygen/pk/{last}", last), B)  # the joint key, signed by its maker
+
+
+def signed_model(rnd):
+    """Round rnd's model (rnd >= 1) once t members signed it: whoever serves it can't hand out a model of its own."""
+    import numpy as np
+    data = get(f"model/{rnd}")
+    signers = set()  # dropped members never sign, so wait for t signatures, not all
+    while len(signers) < threshold(CFG):
+        for j, m in enumerate(CFG["committee"]):
+            if j not in signers and (sig := try_get(f"modelsig/{rnd}/{j}")) is not None:
+                if not verify(m["sign"], f"model/{rnd}", data, sig):
+                    raise PermissionError(f"model {rnd}: bad signature from member {j}")
+                signers.add(j)
+        check_abort()
+        time.sleep(0.05)
+    return np.frombuffer(data, dtype=np.float64)
+
+
+def prove(c, rnd, delta, lie=False):
+    """With a norm bound: clip the update and post its range proof, which goes up before the post (the lead counts a
+    post once both are in). Returns the update to encrypt. lie: the demo's liar, unclipped with a lying proof."""
+    if CFG.get("norm_bound") is None:
+        return delta
+    import range_proof as rp
+    from threshold import pack
+    bound, members = CFG["norm_bound"], json.loads(from_members(f"members/{rnd}"))
+    p = rp.pine(len(delta), bound, len(members))
+    delta = delta if lie else rp.clip(delta, bound)
+    nonce, public, shares = rp.prove(rp.liar(p) if lie else p, delta)
+    name = f"proof/{rnd}/{c}"
+    sput(name, pack(nonce, public, *(to_member(j, f"{name}/{j}", sh) for j, sh in zip(members, shares))))
+    return delta
+
+
+def participant(c):
+    from threshold import encrypt
+    cc, pk = joint_key()
     t = task()
     w, rounds = start_model(t), t.ROUNDS
     X, y = t.participant_data(c)
     offline = {int(r) for r in os.environ.get("OFFLINE", "").split(",") if r}
     for rnd in range(rounds):
         if rnd:
-            data = get(f"model/{rnd}")
-            signers = set()  # dropped members never sign, so wait for t signatures, not all
-            while len(signers) < threshold(CFG):
-                for j, m in enumerate(CFG["committee"]):
-                    if j not in signers and (sig := try_get(f"modelsig/{rnd}/{j}")) is not None:
-                        if not verify(m["sign"], f"model/{rnd}", data, sig):
-                            raise PermissionError(f"model {rnd}: bad signature from member {j}")
-                        signers.add(j)
-                check_abort()
-                time.sleep(0.05)
-            w = np.frombuffer(data, dtype=np.float64)
+            w = signed_model(rnd)
         if rnd in offline or (WITHHOLD and SIMULATE and (c < POISON and rnd >= 5 or c == 7 and rnd >= 15)):
             continue
         delta = t.train(w, X, y, seed(rnd, c))
         if c < POISON:
             delta = POISON_SCALE * delta  # default -10: same poisoning as fl_core
-        if CFG.get("norm_bound") is not None:  # the range proof goes up first: the lead counts a post once both are in
-            import range_proof as rp
-            bound, members = CFG["norm_bound"], json.loads(from_members(f"members/{rnd}"))
-            p = rp.pine(len(delta), bound, len(members))
-            lie = SIMULATE and c == 0 and POISON  # the demo's liar: unclipped update, lying norm proof
-            delta = delta if lie else rp.clip(delta, bound)
-            nonce, public, shares = rp.prove(rp.liar(p) if lie else p, delta)
-            name = f"proof/{rnd}/{c}"
-            sput(name, pack(nonce, public, *(to_member(j, f"{name}/{j}", sh) for j, sh in zip(members, shares))))
+        delta = prove(c, rnd, delta, lie=SIMULATE and c == 0 and POISON)  # the demo's liar: participant 0
         post = encrypt(cc, pk, delta)
         if BAD_POST and SIMULATE and c == 3 and rnd == 2:
             post = b"not a ciphertext"
@@ -1288,7 +1305,9 @@ def launch():
         raise SystemExit(f"REMOTE_MEMBER must be 1..{n_members - 1} (not the lead) with its m{remote}.pub in this folder")
     local = [i for i in range(n_members) if i != remote]
     members = {i: f"concilium-member-{i}" for i in local}
-    names = ["concilium-board", *members.values()] + [f"concilium-client-{c}" for c in range(N_CLIENTS)]
+    flower = os.environ.get("FLOWER") == "1"  # the participants as one Flower simulation instead (flower_check.py)
+    names = ["concilium-board", *members.values()] + (["concilium-flower"] if flower else
+                                                     [f"concilium-client-{c}" for c in range(N_CLIENTS)])
     run = ".concilium-demo"  # inside this folder: the containers see it as /work/.concilium-demo
     shutil.rmtree(run, ignore_errors=True)
     os.makedirs(run)
@@ -1332,7 +1351,14 @@ def launch():
             docker(*base, "--name", name, "-e", f"OMP_NUM_THREADS={threads}",
                    "-e", "OMP_WAIT_POLICY=PASSIVE",  # idle threads sleep: ~half the CPU, ~9% slower HE
                    IMAGE, "python3", "deploy.py", "member", f"{run}/concilium.json", f"{run}/m{i}.key")
-        for c in range(N_CLIENTS):
+        if flower:  # the demo's image + Flower (not hash-pinned: a check, not something a party runs)
+            subprocess.run(["docker", "build", "-t", "concilium-flower", "-"], check=True, text=True,
+                           input=f"FROM {IMAGE}\nRUN pip3 install --no-cache-dir --break-system-packages "
+                                 "'flwr[simulation]==1.40.0'\n")
+            docker(*base, "--name", "concilium-flower", "-e", "OMP_NUM_THREADS=1", "-e", "PYTHONPATH=/work",
+                   "-e", "PINE_MALICIOUS=1",  # participant 0's own proof checks off (honest ones' proofs still verify)
+                   "--shm-size", "1g", "concilium-flower", "python3", "flower_check.py")
+        for c in [] if flower else range(N_CLIENTS):
             docker(*base, "--name", f"concilium-client-{c}", "-e", "OMP_NUM_THREADS=1",
                    "-e", f"PINE_MALICIOUS={int(bool(float(NORM_BOUND)) and SIMULATE and c == 0)}",  # the liar's own checks off
                    "-e", "OFFLINE=" + ",".join(map(str, OFFLINE.get(c, []))),

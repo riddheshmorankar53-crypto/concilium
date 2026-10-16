@@ -1,0 +1,80 @@
+"""concilium_flwr.py checked: the demo's 10 participants as one Flower simulation, against the real board and committee.
+
+  FLOWER=1 python deploy.py      (Docker; builds the concilium-flower image, the research image + flwr, once)
+
+The launcher starts the board and the members as usual, and this script instead of the 10 participant containers.
+Each Flower node is a Concilium participant (partition i uses p<i>.key) whose ClientApp trains like
+deploy.participant: same data, seeds and poisoners (0-2 send -10x), participant 0 lying in its range proof. So the
+lead's end-of-run checks (every round matches plaintext defended FedAvg, the proofs reject exactly the liar, the run
+survives member 2's crash) hold for updates that went through Flower. This script asserts the Flower side: no reply
+reached the Flower server with an update in it, and its final model is the last one the committee signed.
+"""
+import json
+import os
+import sys
+
+from flwr.app import ArrayRecord, Message, MetricRecord, RecordDict
+from flwr.clientapp import ClientApp
+from flwr.serverapp import ServerApp
+from flwr.simulation import run_simulation
+
+import deploy
+from concilium_flwr import ConciliumStrategy, concilium_mod, flat
+
+RUN = os.environ.get("CONCILIUM_RUN", "/work/.concilium-demo")
+_prove = deploy.prove
+deploy.prove = lambda c, rnd, delta, lie=False: _prove(c, rnd, delta, lie=c == 0)  # deploy.participant's liar
+
+
+def node_keys(msg, ctx, call_next):
+    """Simulation only: partition i is participant i. A real node sets these in its node config."""
+    ctx.node_config["concilium-config"] = f"{RUN}/concilium.json"
+    ctx.node_config["concilium-key"] = f"{RUN}/p{ctx.node_config['partition-id']}.key"
+    return call_next(msg, ctx)
+
+
+client = ClientApp(mods=[node_keys, concilium_mod])
+
+
+@client.train()
+def train(msg, ctx):
+    t, c, rnd = deploy.task(), int(ctx.node_config["partition-id"]), int(msg.content["config"]["server-round"]) - 1
+    w = flat(msg.content["arrays"])
+    X, y = t.participant_data(c)
+    delta = t.train(w, X, y, deploy.seed(rnd, c))
+    if c < deploy.POISON:
+        delta = deploy.POISON_SCALE * delta
+    return Message(RecordDict({"arrays": ArrayRecord([w + delta]), "metrics": MetricRecord({"num-examples": len(y)})}),
+                   reply_to=msg)
+
+
+class Checked(ConciliumStrategy):
+    def aggregate_train(self, server_round, replies):
+        replies = list(replies)
+        assert replies and all("arrays" not in r.content for r in replies if not r.has_error()), \
+            "an update reached the Flower server"
+        return super().aggregate_train(server_round, replies)
+
+
+server = ServerApp()
+
+
+@server.main()
+def main(grid, ctx):
+    strategy = Checked(f"{RUN}/concilium.json", fraction_evaluate=0.0)
+    t = deploy.task()
+    w = deploy.start_model(t)
+    result = strategy.start(grid=grid, initial_arrays=ArrayRecord([w]), num_rounds=t.ROUNDS)
+    assert (flat(result.arrays) == deploy.signed_model(t.ROUNDS)).all(), "Flower's final model must be the signed one"
+    print(f"flower: {t.ROUNDS} rounds, no update reached the Flower server, final model = the committee's signed model",
+          flush=True)
+    open(f"{RUN}/flower.ok", "w").close()  # run_simulation logs a failed ServerApp instead of raising
+
+
+if __name__ == "__main__":
+    with open(f"{RUN}/concilium.json") as f:
+        n = len(json.load(f)["participants"])
+    # 4 nodes at a time: each holds the crypto context, and the members need the rest of the CPU and RAM
+    run_simulation(server, client, num_supernodes=n,
+                   backend_config={"init_args": {"num_cpus": 4}, "client_resources": {"num_cpus": 1}})
+    sys.exit(0 if os.path.exists(f"{RUN}/flower.ok") else 1)
