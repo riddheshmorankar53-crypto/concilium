@@ -75,4 +75,4 @@ The full list, with measurements: RESEARCH.md, "Known limits, read before deploy
 | `tasks/` | example tasks and the CSV template |
 | `release/`, `friend/` | the packages for real deployments |
 
-License: MIT.
+License: MIT, except `pine_poc/`: code copied from the IETF PINE and VDAF drafts (BSD, IETF Trust) and pycryptodomex (BSD); see `pine_poc/LICENSE`.
