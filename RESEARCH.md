@@ -23,6 +23,7 @@ script checks its own claims with asserts, so a run that finishes without an err
 | `board_tls_check.py` | a client that never finishes the TLS handshake must not stall the board | `python board_tls_check.py` |
 | `gap_i.py` | a participant reposts a transform of another's ciphertext; members could read the victim's coordinates; fixed: range proofs on by default with a tolerance from the rounding's real spread | Docker, see file |
 | `eval_ss.py` | would secret sharing + PINE-style validity proofs keep the filter's protection? (plaintext, 5 seeds) | `python eval_ss.py` (~25 min, 16 cores) |
+| `eval_mnist.py` | the filter vs FedAvg, FLTrust, Krum, trimmed mean and median on MNIST and Fashion-MNIST, IID and non-IID, 9 attacks (plaintext, 5 seeds) | `.github/workflows/eval.yml` (~45 min per job) |
 | `pine_bench.py` | PINE's reference code with 3 aggregators rejects the gap F wraparound | `python pine_bench.py` then Docker, see file |
 | `range_proof.py` | participants prove \|u\| ≤ B with PINE on secret shares; members check the ciphertext holds the same `u` (random projections) before squaring it, so the flooding has a proven bound | Docker, see file |
 | `flood_probe.py` | how big the committee's decryption noise must be: measures the error in what members decrypt (was 2⁵¹–2⁵⁵ against 2²⁰ of noise) and asserts `threshold.CT_ERROR` bounds it | Docker, see file |
@@ -684,6 +685,43 @@ signing key and the demo launcher writes the shared config, exactly as separate 
   planned and the friend's member carried the decryption with member 0 after it. Keygen 276 s (436 MB posted,
   792 MB fetched), rounds 60 s median (12-361 s; the slowest is the crash round), 30 min in all.
 - **Shortcut:** the example tasks load the full dataset and give each participant its shard; a real task reads only local files.
+
+## Evaluation: MNIST and Fashion-MNIST against the usual robust baselines (2026-10-16)
+
+`eval_mnist.py` (plaintext; the encrypted protocol matches the plaintext filter round by round): a 10-class CNN
+(14,410 parameters), 10 clients with 600 images each, 3 attacking, root set 100, 30 rounds, IID or non-IID
+(Dirichlet 0.5). Test accuracy, mean of 5 seeds (worst seed in brackets where it falls well below), from the
+`eval` workflow (run 38951493304, 20 jobs; the full tables with worst-class recall are in its summary).
+
+| non-IID | FedAvg | **filter** | FLTrust | Krum | trimmed mean | median |
+|---|---|---|---|---|---|---|
+| MNIST, no attack | 0.965 | 0.963 | 0.956 | 0.844 | 0.963 | 0.962 |
+| sign-flip x10 | 0.000 | **0.948** | 0.955 | 0.851 | 0.912 | 0.906 |
+| label flip | 0.753 | **0.957** | 0.948 | 0.348 (0.01) | 0.951 | 0.951 |
+| min-max | 0.963 | **0.958** | 0.955 | 0.583 (0.10) | 0.954 | 0.952 |
+| feedback (hide class 0) | 0.235 | **0.958** | 0.958 | 0.851 | 0.954 | 0.953 |
+| white-box (hide class 0) | 0.100 | **0.954** | 0.949 | 0.851 | 0.950 | 0.946 |
+| Fashion, no attack | 0.799 | 0.768 | 0.760 | 0.664 | 0.781 | 0.780 |
+| sign-flip x10 | 0.000 | **0.755** | 0.706 | 0.662 | 0.686 | 0.692 |
+| label flip | 0.688 | **0.752** | 0.730 | 0.403 (0.01) | 0.734 | 0.726 |
+| agr-tailored std | 0.614 (0.10) | **0.756** | 0.718 | 0.656 | 0.734 | 0.724 |
+| white-box (hide class 0) | 0.100 | **0.743** | 0.725 | 0.662 | 0.720 | 0.700 |
+
+- **Under attack the filter is the best or within 0.01 of the best in 30 of the 32 attack cells** (8 attacks x
+  MNIST/Fashion x IID/non-IID), and its worst seed never drops below 0.70 (Fashion non-IID, min-max and
+  white-box). The two exceptions are the feedback attack on Fashion, where median and trimmed mean beat it by
+  0.02-0.03 (that attack pushes toward class 0 and, on Fashion, happens to help them: they score above their own
+  no-attack accuracy). FedAvg goes to chance under sign-flip and both hiding attacks.
+- **IID**: the filter keeps 0.959-0.967 on MNIST and 0.789-0.811 on Fashion under every attack. Exact FLTrust is
+  weaker there (MNIST ALIE 0.874 with a worst seed of 0.54, label flip 0.844 / 0.40), the same failure as gap G's
+  single collapse: with a public-quality reference whose angle is crude, a near-honest attack gets full weight.
+- **The cost on skewed data**: Fashion non-IID without an attack, the filter loses 0.03 against FedAvg (0.768 vs
+  0.799) and the worst class's recall drops from 0.43 to 0.25, because it leaves out ~1/4 of honest updates
+  per round (MNIST ~0.3). Trimmed mean and median lose less there (0.781), but fall to 0.686-0.692 under
+  sign-flip and to 0.05 worst-class recall under the white-box hiding attack, where the filter keeps 0.27.
+- **Krum** loses 0.03-0.12 even without an attack (it averages nothing), and label flip or min-max drive single
+  seeds to chance (0.01-0.10).
+- Not covered: larger models (CIFAR-10), more clients, or the encrypted run through the real committee on MNIST.
 
 ## Evaluation: secret sharing with PINE for a true 1-bit reveal
 
