@@ -57,7 +57,10 @@ Everything can run at no cost: the image is public, and the board can run on one
 - **Poisoning is bounded, not prevented**; on skewed data about 1/3 of honest updates are left out of a round.
 - **The added noise is a mask, not differential privacy** (ε ≈ 48 per round).
 - **Size:** up to ~100k parameters on CPUs; 10 participants per run were tested.
-- **Tested on** Windows + Docker Desktop and two laptops on one Wi-Fi; not yet on Mac/Linux hosts or across the internet.
+- **Tested on** Windows + Docker Desktop, two laptops on one Wi-Fi, and GitHub's machines: Linux (a full deployment
+  through `release/concilium.sh`, every party a non-root user), an Intel Mac (the one-machine demo via Colima; one of
+  two runs hit the 90-minute limit) and ARM64 Linux (`threshold.py` with OpenFHE built from source: the PyPI wheel is
+  x86-64 only, so there's no ARM image yet). Not yet across the internet. `.github/workflows/` reruns these.
 
 The full list, with measurements: RESEARCH.md, "Known limits, read before deploying".
 

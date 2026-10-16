@@ -92,7 +92,10 @@ to finished run in 28 s for the LR task.
   The board can stop a run (it can't forge or read anything).
 - **Size:** tested up to 107k parameters (2 GB RAM per member). Deploys ran with 10 participants; the protocol was checked with 20 (`threshold.check_groups`).
 - **Tested on:** Windows + Docker Desktop, a Linux VM on the same laptop, and two Windows laptops on one Wi-Fi
-  (2026-10-15). Not yet on a real Mac/Linux host or across the internet.
+  (2026-10-15), and GitHub runners (2026-10-16): Linux release-script deployment as non-root (found and fixed: the
+  board's 5-deep accept queue overflowed behind Docker's Linux port proxy, which reset connections), Intel Mac via
+  Colima (demo passed once, the second run hit the 90-min limit), ARM64 (`threshold.py`, OpenFHE built from
+  source). Not yet across the internet.
 
 `concilium.json` is who's who: everyone's public keys, the board URL, the task, `--min` (participants
 needed for a round; default n − f − 1 with `--max-malicious f`, default 30%, so 6 of 10: the honest ones,
