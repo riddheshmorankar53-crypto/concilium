@@ -22,12 +22,16 @@ import deploy
 from concilium_flwr import ConciliumStrategy, concilium_mod, flat
 
 RUN = os.environ.get("CONCILIUM_RUN", "/work/.concilium-demo")
-_prove = deploy.prove
-deploy.prove = lambda c, rnd, delta, lie=False: _prove(c, rnd, delta, lie=c == 0)  # deploy.participant's liar
 
 
 def node_keys(msg, ctx, call_next):
-    """Simulation only: partition i is participant i. A real node sets these in its node config."""
+    """Simulation only: partition i is participant i (a real node sets these in its node config), and participant 0
+    lies in its range proof, as in deploy.participant. Patched here, in the Ray worker: Ray ships this script's
+    functions by value, so its module-level code never runs there."""
+    if not hasattr(deploy.prove, "liar"):
+        honest = deploy.prove
+        deploy.prove = lambda c, rnd, delta, lie=False: honest(c, rnd, delta, lie=c == 0)
+        deploy.prove.liar = True
     ctx.node_config["concilium-config"] = f"{RUN}/concilium.json"
     ctx.node_config["concilium-key"] = f"{RUN}/p{ctx.node_config['partition-id']}.key"
     return call_next(msg, ctx)
