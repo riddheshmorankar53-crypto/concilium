@@ -1,26 +1,57 @@
 # Builds the concilium image on GitHub's machines and publishes it to ghcr.io, tagged with the code hash
 # (`concilium version`, part of every session id) and `latest`. Free for public packages; no upload from a home line.
+# Two native builds (x86-64 and arm64 runners, no emulation) joined into one multi-arch tag, so `docker pull`
+# picks the right one. Both builds must report the same code hash, or nothing is tagged.
 name: image
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, requirements.txt, "*.py", "tasks/**", "pine_poc/**"]
+    paths: [Dockerfile, .dockerignore, requirements.txt, "*.py", "tasks/**", "pine_poc/**", .github/workflows/image.yml]
 permissions:
   contents: read
   packages: write
+defaults:
+  run:
+    shell: bash
 jobs:
-  concilium:
-    runs-on: ubuntu-24.04
+  build:
+    strategy:
+      matrix:
+        include:
+          - {arch: amd64, runner: ubuntu-24.04}
+          - {arch: arm64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - run: docker build --target tool -t concilium .
+      - name: arm64 check (OpenFHE built from source here)
+        if: matrix.arch == 'arm64'
+        run: docker run --rm -v "$PWD:/work" concilium python3 threshold.py
       - name: push
         run: |
           hash=$(docker run --rm concilium concilium version | cut -d' ' -f3)
           image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/concilium
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          for tag in "$hash" latest; do
-            docker tag concilium "$image:$tag" && docker push "$image:$tag"
-          done
-          echo "pushed $image:$hash (compare this hash with \`concilium version\` on a local build)" >> "$GITHUB_STEP_SUMMARY"
+          docker tag concilium "$image:$hash-${{ matrix.arch }}" && docker push "$image:$hash-${{ matrix.arch }}"
+          echo "$hash" > hash-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hash-${{ matrix.arch }}
+          path: hash-${{ matrix.arch }}
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: one tag for both architectures
+        run: |
+          amd=$(cat hash-amd64); arm=$(cat hash-arm64)
+          [ "$amd" = "$arm" ] || { echo "::error::code hash differs: amd64 $amd, arm64 $arm"; exit 1; }
+          image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/concilium
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx imagetools create -t "$image:$amd" -t "$image:latest" "$image:$amd-amd64" "$image:$amd-arm64"
+          echo "pushed $image:$amd for amd64 + arm64 (compare this hash with \`concilium version\` on a local build)" >> "$GITHUB_STEP_SUMMARY"
