@@ -29,4 +29,8 @@ jobs:
       - name: failure details
         if: failure()
         run: |
-          [ -f demo.log ] && echo "::error title=demo.log::$(tail -60 demo.log | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; true
+          [ -f demo.log ] || exit 0
+          note() { echo "::error title=$1::$(sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
+          grep -v "Shutting down\|shutdown\|Finished server process\|terminated gracefully" demo.log | tail -50 | note "demo.log (tail)"
+          grep -nE "Traceback|Error|ERROR|assert|WARNING|flower:|exited [0-9]" demo.log | grep -v "Node.js" | head -60 | note "errors"
+          grep -n -A12 "deployed:" demo.log | note "committee report"; true
