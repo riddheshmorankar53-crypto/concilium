@@ -109,13 +109,16 @@ def deployment(n):
     with open(f"{app}/pyproject.toml", "w") as f:
         f.write(PYPROJECT)
     with open(f"{home}/config.toml", "w") as f:
-        f.write('[superlink]\ndefault = "check"\n\n[superlink.check]\naddress = "127.0.0.1:9093"\ninsecure = true\n')
+        f.write('[superlink]\ndefault = "check"\n\n[superlink.check]\naddress = "127.0.0.1:8000"\ninsecure = true\n')
     env = os.environ | {"FLWR_HOME": home}
     procs = [subprocess.Popen(["flower-superlink", "--insecure"], env=env)]
-    procs += [subprocess.Popen(["flower-supernode", "--insecure", "--superlink", "127.0.0.1:9092", "--port", str(9200 + i),
+    procs += [subprocess.Popen(["flower-supernode", "--insecure", "--port", str(9200 + i),
                                 "--node-config", f"partition-id={i}"], env=env) for i in range(n)]
     try:
-        time.sleep(10)  # the SuperLink's APIs up
+        start = time.time()  # the SuperLink's HTTP API up (the SuperNodes retry on their own)
+        while subprocess.run(["python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 1)"],
+                             capture_output=True).returncode and time.time() - start < 120:
+            time.sleep(1)
         subprocess.run(["flwr", "run", app, "check", "--stream"], env=env, check=True, timeout=3600)
         start = time.time()  # --stream may return before the ServerApp's last line
         while not any(os.path.exists(f"{RUN}/flower.{s}") for s in ("ok", "fail")) and time.time() - start < 600:
