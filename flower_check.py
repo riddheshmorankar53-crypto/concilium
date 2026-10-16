@@ -13,6 +13,7 @@ reached the Flower server with an update in it, and its final model is the last 
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -116,9 +117,12 @@ def deployment(n):
                                 "--node-config", f"partition-id={i}"], env=env) for i in range(n)]
     try:
         start = time.time()  # the SuperLink's HTTP API up (the SuperNodes retry on their own)
-        while subprocess.run(["python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 1)"],
-                             capture_output=True).returncode and time.time() - start < 120:
-            time.sleep(1)
+        while time.time() - start < 120:
+            try:
+                socket.create_connection(("127.0.0.1", 8000), 1).close()
+                break
+            except OSError:
+                time.sleep(1)
         subprocess.run(["flwr", "run", app, "check", "--stream"], env=env, check=True, timeout=3600)
         start = time.time()  # --stream may return before the ServerApp's last line
         while not any(os.path.exists(f"{RUN}/flower.{s}") for s in ("ok", "fail")) and time.time() - start < 600:

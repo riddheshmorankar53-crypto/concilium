@@ -67,10 +67,17 @@ node config. The mod gives your train function the model t committee members sig
 sent), posts the update encrypted with its range proof to the Concilium board, and strips it from the reply, so
 the Flower server sees metrics only. The board and committee run as above (`concilium board`, `concilium member`);
 the committee still needs the task file, since it trains the filter's reference update on its root data, so use
-the same `train` in your `ClientApp`. Client nodes need `openfhe` (Linux x86-64; on ARM build it, see the
-Dockerfile) next to `deploy.py`, `threshold.py`, `range_proof.py` and `pine_poc/`. `FLOWER=1 python deploy.py`
-runs the demo's participants as a Flower simulation and checks it (`flower_check.py`, also on CI). Tested with
-Flower's simulation runtime only, not yet with separate SuperLink/SuperNode processes.
+the same `train` in your `ClientApp`. Run client nodes in the `ghcr.io/riddheshmorankar53-crypto/concilium-flower`
+image (x86-64 and ARM; Flower and Concilium pinned by hash):
+
+```
+docker run -v "$PWD:/work" ghcr.io/riddheshmorankar53-crypto/concilium-flower flower-supernode \
+  --superlink <your SuperLink> --node-config "concilium-config='concilium.json' concilium-key='p0.key'"
+```
+
+`FLOWER=1 python deploy.py` (Flower's simulation runtime) and `FLOWER=deploy python deploy.py` (a SuperLink, 10
+SuperNodes, `flwr run`) run the demo's participants as Flower nodes against the real board and committee and check
+it (`flower_check.py`, both on CI). Not yet tested with Flower nodes on separate machines.
 
 ## Limits, in short
 
