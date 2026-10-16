@@ -1,0 +1,67 @@
+# eval_mnist.py on GitHub's CPUs: MNIST and Fashion-MNIST, IID and non-IID, 5 seeds, one job each (20 in parallel),
+# then the tables (mean over seeds). The tables go out as annotations too, readable without signing in.
+name: eval
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [eval_mnist.py, .github/workflows/eval.yml]
+defaults:
+  run:
+    shell: bash
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        data: [mnist, fashion]
+        dist: [iid, noniid]
+        seed: [0, 1, 2, 3, 4]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - name: packages (the image's, by hash)
+        run: |
+          pip3 install --break-system-packages --require-hashes --no-deps -r requirements.txt \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+      - name: eval_mnist.py ${{ matrix.data }} ${{ matrix.dist }} ${{ matrix.seed }}
+        run: OMP_NUM_THREADS=1 python3 eval_mnist.py ${{ matrix.data }} ${{ matrix.dist }} ${{ matrix.seed }} | tee out.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ matrix.data }}-${{ matrix.dist }}-${{ matrix.seed }}
+          path: out.jsonl
+  table:
+    needs: run
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: eval
+      - name: tables
+        run: |
+          pip3 install --break-system-packages numpy
+          python3 eval_mnist.py table eval/*/out.jsonl | tee tables.md
+          cat tables.md >> "$GITHUB_STEP_SUMMARY"
+          # one annotation per setting (GitHub keeps 10 per step)
+          awk '/^### /{n++} {print > ("part" n ".md")}' tables.md
+          for f in part[0-9]*.md; do
+            echo "::notice title=$(head -1 $f | sed 's/^### //')::$(sed 's/%/%25/g' $f | sed ':a;N;$!ba;s/\n/%0A/g')"
+          done
+          # the raw lines too, compressed into one annotation per setting
+          for s in mnist fashion; do for d in iid noniid; do
+            cat eval/eval-$s-$d-*/out.jsonl 2>/dev/null | python3 -c "
+          import json, sys
+          for l in sys.stdin:
+              r = json.loads(l); print(r['seed'], r['attack'], r['defense'], round(r['acc'], 3), round(r['worst'], 3),
+                                     r['poisoned_kept'] if r['poisoned_kept'] is None else round(r['poisoned_kept'], 2),
+                                     r['honest_rejected'] if r['honest_rejected'] is None else round(r['honest_rejected'], 2), sep=',')
+          " > raw.csv
+            echo "::notice title=raw $s $d (seed,attack,defense,acc,worst,poisoned kept,honest rejected)::$(sed ':a;N;$!ba;s/\n/%0A/g' raw.csv)"
+          done; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tables
+          path: tables.md
