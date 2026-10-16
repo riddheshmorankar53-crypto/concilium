@@ -1,0 +1,53 @@
+# Across the internet: member 1 on a GitHub runner, the board, members 0 and 2 and the participants on the owner's
+# laptop (REMOTE_MEMBER=1 BOARD_HOST=concilium-board python deploy.py), joined by Tailscale (repo secret TS_AUTHKEY:
+# an ephemeral auth key). The runner makes its own key and hands over only m1.pub; the laptop PUTs back
+# concilium.json (public keys + board address), and its address is where the board is.
+name: internet
+on:
+  push:
+    branches: [internet-run]
+defaults:
+  run:
+    shell: bash
+jobs:
+  member:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target tool -t concilium .
+      - uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          hostname: concilium-runner
+      - name: keys, then m1.pub out and concilium.json in on port 8002 (tailnet only)
+        run: |
+          mkdir run && cd run
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/work" concilium concilium keys m1
+          timeout 1800 python3 - <<'EOF'
+          import http.server
+          class H(http.server.BaseHTTPRequestHandler):
+              def do_GET(s):
+                  body = open("m1.pub", "rb").read() if s.path == "/m1.pub" else b""
+                  s.send_response(200 if body else 404); s.end_headers(); s.wfile.write(body)
+              def do_PUT(s):
+                  if s.path != "/concilium.json":
+                      s.send_response(404); s.end_headers(); return
+                  open("concilium.json", "wb").write(s.rfile.read(int(s.headers["Content-Length"])))
+                  open("laptop.ip", "w").write(s.client_address[0])
+                  s.send_response(200); s.end_headers(); s.server.done = True
+          srv = http.server.HTTPServer(("", 8002), H); srv.done = False
+          while not srv.done:
+              srv.handle_request()
+          EOF
+          echo "laptop at $(cat laptop.ip)"
+      - name: member 1
+        run: |
+          cd run
+          docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            --add-host "concilium-board:$(cat laptop.ip)" -e NET_TIMEOUT=60 -e OMP_NUM_THREADS=4 \
+            -e OMP_WAIT_POLICY=PASSIVE -v "$PWD:/work" concilium concilium member concilium.json m1.key 2>&1 | tee m1.log
+      - name: failure details
+        if: failure()
+        run: |
+          [ -f run/m1.log ] && echo "::error title=m1.log::$(tail -40 run/m1.log | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; true
