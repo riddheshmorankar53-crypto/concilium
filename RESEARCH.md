@@ -731,8 +731,9 @@ signing key and the demo launcher writes the shared config, exactly as separate 
   decisions differed from the plaintext replay in **0 of 30 rounds** in all three runs. Without the masking noise
   (`DP_Z=0`): accuracy **0.946**, worst class 0.883, max |w - plain| 8e-4 (the flooding), against 0.948 in the
   plaintext table. With the default noise (`--dp-z 0.1`, std 0.2 per member at B = 2): 0.869 and 0.890, worst class
-  0.67-0.76: the noise, not the encryption, costs 0.06-0.08 here, twice the breast cancer cost, since it scales
-  with B. 8-12 min per run on a 4-core GitHub runner (rounds 22 s median, 2 ciphertexts per update).
+  0.67-0.76: the noise, not the encryption, costs 0.06-0.08 here, where on the PneumoniaMNIST CNN (B = 1) it cost
+  nothing measurable (`dp_measure.py`, under Next steps). Its std scales with B, and MNIST's later updates (norm
+  0.3-0.6) are small next to 0.2 per member; untested: B = 1 here, or z scaled to the update size. 8-12 min per run on a 4-core GitHub runner (rounds 22 s median, 2 ciphertexts per update).
 - Not covered: larger models, more clients.
 
 ## Evaluation: secret sharing with PINE for a true 1-bit reveal
