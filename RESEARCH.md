@@ -725,7 +725,15 @@ signing key and the demo launcher writes the shared config, exactly as separate 
   sign-flip and to 0.05 worst-class recall under the white-box hiding attack, where the filter keeps 0.27.
 - **Krum** loses 0.03-0.12 even without an attack (it averages nothing), and label flip or min-max drive single
   seeds to chance (0.01-0.10).
-- Not covered: larger models (CIFAR-10), more clients, or the encrypted run through the real committee on MNIST.
+- **Encrypted, through the real committee (2026-10-17, `mnist` workflow, `tasks/mnist.py`: seed 0's split and
+  model).** Board, 3 members and 10 participants as containers, the demo's 3 sign-flip x10 attackers, participant
+  0 lying in its range proof (B = 2; honest norms 0.3-2.35), two dropouts, member 2 crashing at round 15. Keep/reject
+  decisions differed from the plaintext replay in **0 of 30 rounds** in all three runs. Without the masking noise
+  (`DP_Z=0`): accuracy **0.946**, worst class 0.883, max |w - plain| 8e-4 (the flooding), against 0.948 in the
+  plaintext table. With the default noise (`--dp-z 0.1`, std 0.2 per member at B = 2): 0.869 and 0.890, worst class
+  0.67-0.76: the noise, not the encryption, costs 0.06-0.08 here, twice the breast cancer cost, since it scales
+  with B. 8-12 min per run on a 4-core GitHub runner (rounds 22 s median, 2 ciphertexts per update).
+- Not covered: larger models, more clients.
 
 ## Evaluation: secret sharing with PINE for a true 1-bit reveal
 
