@@ -16,11 +16,13 @@ CIFAR-10 (`cifar`): a 3-channel CNN of 40,682 parameters, 2,500 images per clien
 Data comes from OpenML, CIFAR-10 from Hugging Face (cached as <name>.npz here; train first, the last 10,000 test). ~1.5 h per command on a 4-core CPU.
 """
 import json
+import os
 import sys
 
 import numpy as np
 
-N_CLIENTS, N_MAL, ROUNDS, PER_CLIENT, ROOT_SIZE, ALPHA = 10, 3, 30, 600, 100, 0.5
+N_CLIENTS, N_MAL, ROUNDS, PER_CLIENT, ALPHA = 10, 3, 30, 600, 0.5
+ROOT_SIZE = int(os.environ.get("ROOT", 100))  # the committee's root set; ROOT=500 eval_mnist.py ...: a bigger one
 DEFENSES = ("FedAvg", "filter", "FLTrust", "Krum", "trimmed mean", "median")
 ATTACKS = [("none", None), ("sign-flip x10", None), ("ALIE", None), ("label flip", None),
            ("agr-tailored", "std"), ("min-max", None), ("min-sum", None), ("feedback", "hide"), ("white-box", "hide")]
@@ -186,5 +188,5 @@ if __name__ == "__main__":
         for d in DEFENSES:
             acc, worst, mal, hon = run(t, d, kind, param, seed)
             label = kind if param is None else f"{kind} {param}"
-            print(json.dumps(dict(setting=f"{name} {dist}", seed=seed, attack=label, defense=d, acc=acc, worst=worst,
+            print(json.dumps(dict(setting=f"{name} {dist}" + (f" root {ROOT_SIZE}" if ROOT_SIZE != 100 else ""), seed=seed, attack=label, defense=d, acc=acc, worst=worst,
                                   poisoned_kept=mal, honest_rejected=hon)), flush=True)
