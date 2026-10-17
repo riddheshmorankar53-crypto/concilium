@@ -9,10 +9,11 @@ to the median length), exact FLTrust, and the usual plaintext baselines, which n
 gap_g's optimizing attackers (agr-tailored std, min-max, min-sum, feedback, white-box), pushing toward class 0
 where they need a harmful direction. Reported: test accuracy and the worst class's recall (a hiding attack shows
 there first). Every run reseeds torch, so the defenses in a cell see the same training randomness.
-    python eval_mnist.py <mnist|fashion> <iid|noniid> <seed>   one JSON line per (attack, defense)
+CIFAR-10 (`cifar`): a 3-channel CNN of 40,682 parameters, 2,500 images per client; GPU recommended.
+    python eval_mnist.py <mnist|fashion|cifar> <iid|noniid> <seed>   one JSON line per (attack, defense)
     python eval_mnist.py table <files...>                      mean over seeds, as a markdown table
-    python eval_mnist.py data <mnist|fashion>                  only download the data (for tasks/mnist.py)
-Data comes from OpenML (cached as <name>.npz here). ~1.5 h per command on a 4-core CPU.
+    python eval_mnist.py data <mnist|fashion|cifar>            only download the data (for tasks/mnist.py)
+Data comes from OpenML, CIFAR-10 from Hugging Face (cached as <name>.npz here; train first, the last 10,000 test). ~1.5 h per command on a 4-core CPU.
 """
 import json
 import sys
@@ -32,6 +33,17 @@ def data(name):
         d = np.load(f"{name}.npz")
         return d["X"], d["y"]
     except FileNotFoundError:
+        if name == "cifar":  # Hugging Face's copy (uoft-cs/cifar10): the original server is slow
+            import io
+
+            import pandas as pd
+            from PIL import Image
+            hf = "https://huggingface.co/datasets/uoft-cs/cifar10/resolve/main/plain_text/{}-00000-of-00001.parquet"
+            df = pd.concat([pd.read_parquet(hf.format(part)) for part in ("train", "test")])
+            X = np.stack([np.asarray(Image.open(io.BytesIO(im["bytes"]))).transpose(2, 0, 1).ravel() for im in df["img"]])
+            y = df["label"].to_numpy().astype(np.uint8)
+            np.savez_compressed("cifar.npz", X=X, y=y)
+            return X, y
         from sklearn.datasets import fetch_openml
         X, y = fetch_openml(OPENML[name], version=1, return_X_y=True, as_frame=False, parser="liac-arff")
         X, y = X.astype(np.uint8), y.astype(np.uint8)
@@ -46,10 +58,12 @@ def task(name, non_iid, seed):
     import gap_b_cnn as c
     rng = np.random.default_rng(seed)
     X, y = data(name)
-    X = torch.tensor(X.reshape(-1, 1, 28, 28) / 255.0, dtype=torch.float32, device=c.DEV)  # GPU if there is one
+    cifar = name == "cifar"
+    X = torch.tensor(X.reshape(-1, 3, 32, 32) / 255.0 - 0.5 if cifar else X.reshape(-1, 1, 28, 28) / 255.0,
+                     dtype=torch.float32, device=c.DEV)  # GPU if there is one
     y = torch.tensor(y.astype(int), dtype=torch.long, device=c.DEV)
-    train, test = np.arange(60000), np.arange(60000, 70000)  # OpenML keeps the original split order
-    pool = rng.permutation(train)[:N_CLIENTS * PER_CLIENT + ROOT_SIZE]
+    train, test = np.arange(len(y) - 10000), np.arange(len(y) - 10000, len(y))  # the original split order
+    pool = rng.permutation(train)[:N_CLIENTS * (2500 if cifar else PER_CLIENT) + ROOT_SIZE]
     root, rest = pool[:ROOT_SIZE], pool[ROOT_SIZE:]
     if non_iid:  # each class split across clients with Dirichlet(ALPHA) proportions
         shards = [[] for _ in range(N_CLIENTS)]
@@ -61,8 +75,11 @@ def task(name, non_iid, seed):
     else:
         shards = np.array_split(rest, N_CLIENTS)
     torch.manual_seed(seed)
-    net = nn.Sequential(nn.Conv2d(1, 8, 3), nn.ReLU(), nn.MaxPool2d(2), nn.Conv2d(8, 16, 3), nn.ReLU(),
-                        nn.MaxPool2d(2), nn.Flatten(), nn.Linear(400, 32), nn.ReLU(), nn.Linear(32, 10)).to(c.DEV)
+    net = (nn.Sequential(nn.Conv2d(3, 16, 3), nn.ReLU(), nn.MaxPool2d(2), nn.Conv2d(16, 32, 3), nn.ReLU(),
+                         nn.MaxPool2d(2), nn.Conv2d(32, 64, 3), nn.ReLU(), nn.MaxPool2d(2), nn.Flatten(),
+                         nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, 10)) if cifar else
+           nn.Sequential(nn.Conv2d(1, 8, 3), nn.ReLU(), nn.MaxPool2d(2), nn.Conv2d(8, 16, 3), nn.ReLU(),
+                         nn.MaxPool2d(2), nn.Flatten(), nn.Linear(400, 32), nn.ReLU(), nn.Linear(32, 10))).to(c.DEV)
     w0 = c.parameters_to_vector(net.parameters()).detach().double().cpu().numpy()
     hide = np.zeros_like(w0)  # output bias toward class 0, away from the rest
     hide[-10:] = -1 / 9
