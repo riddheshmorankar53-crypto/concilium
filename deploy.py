@@ -64,6 +64,7 @@ Local demo, one host, 1 + 3 + 10 containers (generates all keys and the config i
                                            # and bytes that crash OpenFHE (round 6, post_crash_check.py)
     WITHHOLD=1 python deploy.py            # the 3 poisoners stop posting at round 5: rounds go on with 6 (participant 8
                                            # leaves at 12) until participant 7 leaves at 15: 3 skipped rounds, the run stops
+    DP_Z=0 python deploy.py                # no masking noise on the sums (default 0.1 x the norm bound)
     NORM_BOUND=0 python deploy.py          # range proofs off (on by default, B = 1: ~6 s rounds on LR; participant 0 lies)
 """
 import base64
@@ -1327,6 +1328,7 @@ def launch():
             *(["--threshold", os.environ["THRESHOLD"]] if os.environ.get("THRESHOLD") else []),
             *(["--round-timeout", "20"] if WITHHOLD else []),  # the demo shouldn't wait 5 min per skipped round
             *(["--init-model", os.environ["INIT_MODEL"]] if os.environ.get("INIT_MODEL") else []),
+            *(["--dp-z", os.environ["DP_Z"]] if os.environ.get("DP_Z") else []),
             *(["--norm-bound", NORM_BOUND] if float(NORM_BOUND) else ["--no-norm-bound"])])
     if remote is not None:
         print(f"now start member {remote} on the other machine with {run}/concilium.json"

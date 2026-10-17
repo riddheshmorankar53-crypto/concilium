@@ -13,16 +13,20 @@ defaults:
     shell: bash
 jobs:
   deploy:
+    strategy:
+      fail-fast: false
+      matrix:
+        dp_z: ["0.1", "0"]  # the default masking noise, and none: what the noise costs
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
       - run: docker build --target tool -t concilium .
-      - name: TASK=mnist NORM_BOUND=2 python3 deploy.py
+      - name: TASK=mnist NORM_BOUND=2 DP_Z=${{ matrix.dp_z }} python3 deploy.py
         run: |
           pip3 install --break-system-packages cryptography numpy scikit-learn
           python3 eval_mnist.py data mnist
-          TASK=mnist NORM_BOUND=2 python3 deploy.py 2>&1 | tee demo.log
+          TASK=mnist NORM_BOUND=2 DP_Z=${{ matrix.dp_z }} python3 deploy.py 2>&1 | tee demo.log
       - name: report
         if: always()
         run: |
