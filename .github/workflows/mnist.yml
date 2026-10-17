@@ -1,0 +1,32 @@
+# The encrypted protocol on MNIST: board, 3 members and 10 participants as containers (TASK=mnist python deploy.py),
+# eval_mnist.py's CNN and non-IID split (seed 0), the demo's attackers (3 x sign-flip x10, a liar in its range
+# proof, two dropouts). The lead replays every round in plaintext and fails the run if a keep decision differs.
+# Its report goes out as an annotation, readable without signing in.
+name: mnist
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/mnist.yml, tasks/mnist.py]
+defaults:
+  run:
+    shell: bash
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target tool -t concilium .
+      - name: TASK=mnist NORM_BOUND=2 python3 deploy.py
+        run: |
+          pip3 install --break-system-packages cryptography numpy scikit-learn
+          python3 eval_mnist.py data mnist
+          TASK=mnist NORM_BOUND=2 python3 deploy.py 2>&1 | tee demo.log
+      - name: report
+        if: always()
+        run: |
+          [ -f demo.log ] || exit 0
+          note() { echo "::notice title=$1::$(sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
+          grep -n -B3 -A25 "deployed:" demo.log | note "committee report"
+          tail -40 demo.log | note "demo.log (tail)"; true

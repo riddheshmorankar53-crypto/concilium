@@ -11,7 +11,8 @@ where they need a harmful direction. Reported: test accuracy and the worst class
 there first). Every run reseeds torch, so the defenses in a cell see the same training randomness.
     python eval_mnist.py <mnist|fashion> <iid|noniid> <seed>   one JSON line per (attack, defense)
     python eval_mnist.py table <files...>                      mean over seeds, as a markdown table
-Data comes from OpenML (cached in ~/scikit_learn_data). ~1.5 h per command on a 4-core CPU.
+    python eval_mnist.py data <mnist|fashion>                  only download the data (for tasks/mnist.py)
+Data comes from OpenML (cached as <name>.npz here). ~1.5 h per command on a 4-core CPU.
 """
 import json
 import sys
@@ -25,14 +26,26 @@ ATTACKS = [("none", None), ("sign-flip x10", None), ("ALIE", None), ("label flip
 OPENML = {"mnist": "mnist_784", "fashion": "Fashion-MNIST"}
 
 
+def data(name):
+    """-> X, y from OpenML, cached as <name>.npz in this folder (so containers can read it offline)."""
+    try:
+        d = np.load(f"{name}.npz")
+        return d["X"], d["y"]
+    except FileNotFoundError:
+        from sklearn.datasets import fetch_openml
+        X, y = fetch_openml(OPENML[name], version=1, return_X_y=True, as_frame=False, parser="liac-arff")
+        X, y = X.astype(np.uint8), y.astype(np.uint8)
+        np.savez_compressed(f"{name}.npz", X=X, y=y)
+        return X, y
+
+
 def task(name, non_iid, seed):
     import torch
-    from sklearn.datasets import fetch_openml
     from torch import nn
 
     import gap_b_cnn as c
     rng = np.random.default_rng(seed)
-    X, y = fetch_openml(OPENML[name], version=1, return_X_y=True, as_frame=False, parser="liac-arff")
+    X, y = data(name)
     X = torch.tensor(X.reshape(-1, 1, 28, 28) / 255.0, dtype=torch.float32, device=c.DEV)  # GPU if there is one
     y = torch.tensor(y.astype(int), dtype=torch.long, device=c.DEV)
     train, test = np.arange(60000), np.arange(60000, 70000)  # OpenML keeps the original split order
@@ -146,6 +159,8 @@ if __name__ == "__main__":
     if sys.argv[1] == "table":
         table(sys.argv[2:])
         sys.exit()
+    if sys.argv[1] == "data":
+        sys.exit(print(data(sys.argv[2])[0].shape))
     name, dist, seed = sys.argv[1], sys.argv[2], int(sys.argv[3])
     import torch
     torch.set_num_threads(1)

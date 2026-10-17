@@ -1,11 +1,10 @@
 # eval_mnist.py on GitHub's CPUs: MNIST and Fashion-MNIST, IID and non-IID, 5 seeds, one job each (20 in parallel),
 # then the tables (mean over seeds). The tables go out as annotations too, readable without signing in.
 name: eval
+# Manual only (Actions tab, "Run workflow"): 20 jobs fill the account's concurrency for ~70 min. Results of
+# run 38951493304 are in RESEARCH.md.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: [eval_mnist.py, .github/workflows/eval.yml]
 defaults:
   run:
     shell: bash
