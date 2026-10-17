@@ -81,8 +81,12 @@ own folder. Checked cold (2026-10-02): 13 parties, each with an empty folder and
 to finished run in 28 s for the LR task.
 
 **Known limits, read before deploying.** Each is measured and explained further down.
-- **Who you trust:** fewer than t committee members collude, and *every* member follows key generation honestly
-  (no proofs of correct key shares yet). The board and the participants are not trusted.
+- **Who you trust:** fewer than t committee members collude, and *every* member follows key generation and
+  decryption honestly (no proofs of correct key shares or partial decryptions yet). Privacy needs only the first
+  part; integrity needs all of it: a member can add any offset to its partial decryption and shift the fused
+  scores or the model update, and the members' cross-check doesn't see it, since they all fuse the same partials.
+  The fixes are proofs of correct decryption, or more than t members decrypting and comparing (Next steps). The
+  board and the participants are not trusted.
 - **What members see:** two scores per participant per round (plus 4 random projections for the range check),
   not the updates. The 1-bit MPC alternative was built and costs ~20× more (Next steps).
 - **Noise is a mask, not differential privacy:** `--dp-z 0.1` gives ε ≈ 48 per round. A real ε costs 15–30 accuracy points.
@@ -920,6 +924,9 @@ From a literature search in September 2026. It isn't exhaustive: the full texts 
 
 ## Next steps
 - Gaps H and I (2026-10-11): fixed, see above.
+- Honest decryption (found 2026-10-16, stated as an assumption for now): a member's partial decryption is
+  trusted as is. Options: more than t members decrypt and the lead compares two fusions (detects, needs a spare
+  member, doesn't name the cheater); or proofs of correct partial decryption (names the cheater; no OpenFHE support).
 - Minimum participants vs. privacy (2026-10-11, `results/2026-10-11/`). With 3 of 10 participants able to withhold,
   the old minimum of 8 let them stall every round; the default is now n − f − 1 = 6 with a round timeout. But the
   minimum is a weak privacy floor: what's decrypted is the sum of the updates the filter keeps, which can be 2.

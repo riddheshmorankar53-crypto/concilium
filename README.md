@@ -81,7 +81,8 @@ it (`flower_check.py`, both on CI). Not yet tested with Flower nodes on separate
 
 ## Limits, in short
 
-- **Trust:** fewer than t committee members collude, and members follow key generation honestly.
+- **Trust:** fewer than t committee members collude, and members follow key generation and decryption honestly
+  (one member adding an offset to its partial decryption would shift the scores or the model undetected).
 - **Members see** two scores per participant per round, not the updates.
 - **Poisoning is bounded, not prevented**; on skewed data about 1/3 of honest updates are left out of a round.
 - **The added noise is a mask, not differential privacy** (ε ≈ 48 per round).
