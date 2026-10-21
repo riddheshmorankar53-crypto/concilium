@@ -1,0 +1,83 @@
+# eval_mnist.py on CIFAR-10 non-IID, the seeds the laptop didn't finish (RESEARCH.md "CIFAR-10, non-IID"):
+# root 100 seeds 2-4, root 500 seeds 1-4. One seed is ~9 attacks x 6 defenses, too long for one 6 h job, so one
+# job per (root, seed, attack), 4 threads each. Results go out as annotations, readable without signing in.
+name: cifar
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/cifar.yml]
+defaults:
+  run:
+    shell: bash
+jobs:
+  data:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip3 install --break-system-packages numpy pandas pyarrow pillow
+          python3 eval_mnist.py data cifar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cifar-data
+          path: cifar.npz
+          retention-days: 3
+  run:
+    needs: data
+    strategy:
+      fail-fast: false
+      matrix:
+        root: [100, 500]
+        seed: [1, 2, 3, 4]
+        attack: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        exclude:
+          - root: 100
+            seed: 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: cifar-data
+      - name: packages (the image's, by hash)
+        run: |
+          pip3 install --break-system-packages --require-hashes --no-deps -r requirements.txt \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+      - name: eval_mnist.py cifar noniid ${{ matrix.seed }} ${{ matrix.attack }} (root ${{ matrix.root }})
+        run: ROOT=${{ matrix.root }} OMP_NUM_THREADS=4 python3 eval_mnist.py cifar noniid ${{ matrix.seed }} ${{ matrix.attack }} | tee out.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cifar-${{ matrix.root }}-${{ matrix.seed }}-${{ matrix.attack }}
+          path: out.jsonl
+  table:
+    needs: run
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cifar-*-*-*
+          path: eval
+      - name: tables
+        run: |
+          pip3 install --break-system-packages numpy
+          python3 eval_mnist.py table eval/*/out.jsonl | tee tables.md
+          cat tables.md >> "$GITHUB_STEP_SUMMARY"
+          # the raw lines, one annotation per root size, for merging with results/2026-10-17
+          for r in 100 500; do
+            cat eval/cifar-$r-*/out.jsonl 2>/dev/null | python3 -c "
+          import json, sys
+          for l in sys.stdin:
+              r = json.loads(l); print(r['seed'], r['attack'], r['defense'], round(r['acc'], 4), round(r['worst'], 4),
+                                     r['poisoned_kept'] if r['poisoned_kept'] is None else round(r['poisoned_kept'], 3),
+                                     r['honest_rejected'] if r['honest_rejected'] is None else round(r['honest_rejected'], 3), sep=',')
+          " > raw.csv
+            echo "::notice title=raw cifar noniid root $r (seed,attack,defense,acc,worst,poisoned kept,honest rejected)::$(sed ':a;N;$!ba;s/\n/%0A/g' raw.csv)"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tables
+          path: tables.md

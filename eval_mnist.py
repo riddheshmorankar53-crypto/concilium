@@ -10,7 +10,7 @@ gap_g's optimizing attackers (agr-tailored std, min-max, min-sum, feedback, whit
 where they need a harmful direction. Reported: test accuracy and the worst class's recall (a hiding attack shows
 there first). Every run reseeds torch, so the defenses in a cell see the same training randomness.
 CIFAR-10 (`cifar`): a 3-channel CNN of 40,682 parameters, 2,500 images per client; GPU recommended.
-    python eval_mnist.py <mnist|fashion|cifar> <iid|noniid> <seed>   one JSON line per (attack, defense)
+    python eval_mnist.py <mnist|fashion|cifar> <iid|noniid> <seed> [attack index...]   one JSON line per (attack, defense)
     python eval_mnist.py table <files...>                      mean over seeds, as a markdown table
     python eval_mnist.py data <mnist|fashion|cifar>            only download the data (for tasks/mnist.py)
 Data comes from OpenML, CIFAR-10 from Hugging Face (cached as <name>.npz here; train first, the last 10,000 test). ~1.5 h per command on a 4-core CPU.
@@ -182,9 +182,9 @@ if __name__ == "__main__":
         sys.exit(print(data(sys.argv[2])[0].shape))
     name, dist, seed = sys.argv[1], sys.argv[2], int(sys.argv[3])
     import torch
-    torch.set_num_threads(1)
+    torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", 1)))
     t = task(name, dist == "noniid", seed)
-    for kind, param in ATTACKS:
+    for kind, param in [ATTACKS[int(i)] for i in sys.argv[4:]] or ATTACKS:
         for d in DEFENSES:
             acc, worst, mal, hon = run(t, d, kind, param, seed)
             label = kind if param is None else f"{kind} {param}"
