@@ -1,0 +1,54 @@
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "FedAvg", "acc": 0.5898000001907349, "worst": 0.3840000033378601, "poisoned_kept": null, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "filter", "acc": 0.5816999673843384, "worst": 0.3680000305175781, "poisoned_kept": null, "honest_rejected": 0.25}
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "FLTrust", "acc": 0.4016000032424927, "worst": 0.10300000756978989, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "Krum", "acc": 0.25279998779296875, "worst": 0.0, "poisoned_kept": null, "honest_rejected": 0.9}
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "trimmed mean", "acc": 0.5529999732971191, "worst": 0.2939999997615814, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "none", "defense": "median", "acc": 0.5486999750137329, "worst": 0.2670000195503235, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "FedAvg", "acc": 0.0, "worst": 0.0, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "filter", "acc": 0.5564000010490417, "worst": 0.20900000631809235, "poisoned_kept": 0.022222222222222223, "honest_rejected": 0.2523809523809524}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "FLTrust", "acc": 0.37849998474121094, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "Krum", "acc": 0.32519999146461487, "worst": 0.0, "poisoned_kept": 0.0, "honest_rejected": 0.8571428571428571}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "trimmed mean", "acc": 0.4212999939918518, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "sign-flip x10", "defense": "median", "acc": 0.43479999899864197, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "FedAvg", "acc": 0.5780999660491943, "worst": 0.3370000123977661, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "filter", "acc": 0.5345999598503113, "worst": 0.09700000286102295, "poisoned_kept": 0.8333333333333334, "honest_rejected": 0.28095238095238095}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "FLTrust", "acc": 0.39409998059272766, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "Krum", "acc": 0.32029998302459717, "worst": 0.0, "poisoned_kept": 0.3333333333333333, "honest_rejected": 1.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "trimmed mean", "acc": 0.5214999914169312, "worst": 0.29500001668930054, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "ALIE", "defense": "median", "acc": 0.5159000158309937, "worst": 0.2850000262260437, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "FedAvg", "acc": 0.49469998478889465, "worst": 0.04100000113248825, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "filter", "acc": 0.5252000093460083, "worst": 0.13700000941753387, "poisoned_kept": 0.2777777777777778, "honest_rejected": 0.1761904761904762}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "FLTrust", "acc": 0.3570999801158905, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "Krum", "acc": 0.3174999952316284, "worst": 0.0, "poisoned_kept": 0.0, "honest_rejected": 0.8571428571428571}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "trimmed mean", "acc": 0.4908999800682068, "worst": 0.06100000441074371, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "label flip", "defense": "median", "acc": 0.48330000042915344, "worst": 0.03400000184774399, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "FedAvg", "acc": 0.49799999594688416, "worst": 0.1980000138282776, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "filter", "acc": 0.5464999675750732, "worst": 0.11600000411272049, "poisoned_kept": 0.3333333333333333, "honest_rejected": 0.14761904761904762}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "FLTrust", "acc": 0.35899999737739563, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "Krum", "acc": 0.25999999046325684, "worst": 0.0, "poisoned_kept": 0.0, "honest_rejected": 0.8571428571428571}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "trimmed mean", "acc": 0.44689998030662537, "worst": 0.1290000081062317, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "agr-tailored std", "defense": "median", "acc": 0.42649999260902405, "worst": 0.09100000560283661, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "FedAvg", "acc": 0.5324000120162964, "worst": 0.30800002813339233, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "filter", "acc": 0.5457000136375427, "worst": 0.14900000393390656, "poisoned_kept": 0.43333333333333335, "honest_rejected": 0.17142857142857143}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "FLTrust", "acc": 0.33899998664855957, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "Krum", "acc": 0.12449999898672104, "worst": 0.0, "poisoned_kept": 0.3333333333333333, "honest_rejected": 1.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "trimmed mean", "acc": 0.4732999801635742, "worst": 0.09300000220537186, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-max", "defense": "median", "acc": 0.46050000190734863, "worst": 0.10500000417232513, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "FedAvg", "acc": 0.5515999794006348, "worst": 0.30100002884864807, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "filter", "acc": 0.5485999584197998, "worst": 0.1080000028014183, "poisoned_kept": 0.5, "honest_rejected": 0.19047619047619047}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "FLTrust", "acc": 0.35420000553131104, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "Krum", "acc": 0.20189999043941498, "worst": 0.0, "poisoned_kept": 0.3333333333333333, "honest_rejected": 1.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "trimmed mean", "acc": 0.5037999749183655, "worst": 0.1850000023841858, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "min-sum", "defense": "median", "acc": 0.48889997601509094, "worst": 0.14100000262260437, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "FedAvg", "acc": 0.21729999780654907, "worst": 0.0, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "filter", "acc": 0.5698999762535095, "worst": 0.19700001180171967, "poisoned_kept": 0.6333333333333333, "honest_rejected": 0.21428571428571427}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "FLTrust", "acc": 0.4090999960899353, "worst": 0.007000000216066837, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "Krum", "acc": 0.25999999046325684, "worst": 0.0, "poisoned_kept": 0.0, "honest_rejected": 0.8571428571428571}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "trimmed mean", "acc": 0.5336999893188477, "worst": 0.3850000202655792, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "feedback hide", "defense": "median", "acc": 0.5593000054359436, "worst": 0.31700000166893005, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "FedAvg", "acc": 0.09999999403953552, "worst": 0.0, "poisoned_kept": 1.0, "honest_rejected": 0.0}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "filter", "acc": 0.5049999952316284, "worst": 0.03400000184774399, "poisoned_kept": 1.0, "honest_rejected": 0.20476190476190476}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "FLTrust", "acc": 0.37299999594688416, "worst": 0.0, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "Krum", "acc": 0.26489999890327454, "worst": 0.0, "poisoned_kept": 0.0, "honest_rejected": 0.8571428571428571}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "trimmed mean", "acc": 0.49969998002052307, "worst": 0.11100000888109207, "poisoned_kept": null, "honest_rejected": null}
+{"setting": "cifar noniid", "seed": 1, "attack": "white-box hide", "defense": "median", "acc": 0.484499990940094, "worst": 0.09600000083446503, "poisoned_kept": null, "honest_rejected": null}

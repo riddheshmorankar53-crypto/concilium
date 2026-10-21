@@ -736,6 +736,29 @@ signing key and the demo launcher writes the shared config, exactly as separate 
   0.3-0.6) are small next to 0.2 per member; untested: B = 1 here, or z scaled to the update size. 8-12 min per run on a 4-core GitHub runner (rounds 22 s median, 2 ciphertexts per update).
 - Not covered: larger models, more clients.
 
+**CIFAR-10, non-IID (2026-10-17, partial).** `eval_mnist.py` on CIFAR-10 (40,682-parameter CNN, 2,500 images per
+client), same setup otherwise. The runs were cut short (laptop overheating, then the project ended), so these are
+**2-3 seeds per cell** for root 100 (`results/2026-10-17/cifar-noniid-*.jsonl`) and **1-2** for root 500
+(`ROOT=500`, `cifar-noniid-root500-*`); `.part` files hold the unfinished seed. Mean test accuracy:
+
+| attack | FedAvg | **filter** root 100 | median root 100 | **filter** root 500 | FLTrust root 500 | median root 500 |
+|---|---|---|---|---|---|---|
+| none | 0.591 | 0.573 | 0.564 | 0.571 | 0.480 | 0.561 |
+| sign-flip x10 | 0.000 | **0.527** | 0.420 | **0.561** | 0.483 | 0.450 |
+| ALIE | 0.574 | 0.528 | 0.534 | 0.552 | 0.474 | 0.531 |
+| label flip | 0.499 | 0.456 | 0.507 | 0.506 | 0.465 | 0.499 |
+| agr-tailored std | 0.347 | **0.531** | 0.429 | **0.527** | 0.474 | 0.442 |
+| min-max | 0.494 | 0.505 | 0.451 | 0.561 | 0.465 | 0.443 |
+| feedback (hide class 0) | 0.159 | 0.515 | 0.549 | 0.554 | 0.476 | 0.542 |
+| white-box (hide class 0) | 0.050 | 0.481 | 0.488 | 0.515 | 0.474 | 0.494 |
+
+- With root 100 the filter leaves out 25% of honest updates per round and trails trimmed mean/median by
+  0.01-0.06 under ALIE, label flip and both hiding attacks; it wins clearly only under sign-flip and agr-tailored.
+- **A larger root set (500) fixes most of that**: honest rejections drop to 8%, and the filter beats every other
+  robust aggregator in every attack cell (FedAvg stays ahead only under ALIE, 0.585, which barely hurts it).
+  Exact FLTrust gains too (0.40 -> 0.48) but stays 0.09 below FedAvg without an attack.
+- Krum: 0.12-0.42 throughout. Too few seeds to quote differences under ~0.03; 5 seeds would settle it.
+
 ## Evaluation: secret sharing with PINE for a true 1-bit reveal
 
 The committee members still see 2 scores per participant. A true 1-bit reveal needs exact arithmetic,
